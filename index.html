@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#2f6b3a">
+<meta name="description" content="Consulta los espacios naturales protegidos y su relación territorial con los municipios de Andalucía.">
+<title>RENPA · Consulta territorial</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header><img src="assets/cabecera.png" alt="Cabecera"></header>
+<nav class="topbar"><div class="topbar-inner"><span class="brand"><span class="brand-mark">◈</span> RENPA <small>Consulta territorial</small></span><span class="top-status"><span class="status-dot"></span> Consulta pública</span></div></nav>
+<main><div class="section-tag">ANDALUCÍA · ESPACIOS NATURALES PROTEGIDOS</div>
+<h1>Explora los espacios naturales protegidos de Andalucía</h1>
+<p class="sub">Localiza municipios y espacios naturales, explora su distribución en el mapa y consulta las superficies y porcentajes de ocupación.</p>
+<div class="info-strip"><div><strong>Consulta territorial</strong><span>Municipios y espacios protegidos</span></div><div><strong>Información geográfica</strong><span>Superficies, porcentajes y cartografía</span></div><div><strong>Datos revisados</strong><span>Exclusiones y solapes confirmados aplicados</span></div></div>
+<div class="modos"><button type="button" class="modoBtn activo" id="tabMunicipio">Buscar por municipio</button><button type="button" class="modoBtn" id="tabEspacio">Buscar por espacio natural</button></div>
+<div id="busquedaMunicipio">
+<div class="buscador"><input id="q" type="text" placeholder="Escribe el nombre de un municipio…" autocomplete="off" autofocus><ul id="sugerencias"></ul></div>
+<p class="opciones"><label><input type="checkbox" id="chkRevisar" checked> Incluir solapes pequeños (a revisar)</label> &nbsp;·&nbsp; <label><input type="checkbox" id="chkRuido" checked> Mostrar solapes descartados (posible fallo de geometría)</label></p>
+<!-- Herramientas de edición excluidas de la aplicación pública -->
+</div>
+<div id="busquedaEspacio"><p class="ayudaModo">Elige un espacio natural para ver su extensión cartográfica completa y los municipios en los que aparece.</p><div class="buscadorEspacio"><input id="qEspacio" type="text" placeholder="Escribe el nombre de un espacio natural…" autocomplete="off"><ul id="sugerenciasEspacio"></ul></div></div>
+<section id="mapaCont" aria-label="Cartografía territorial"><div class="mapaControles"><label for="mapaFondo">Fondo del mapa:</label><select id="mapaFondo"><option value="satellite">Satélite</option><option value="none">Sin mapa base</option></select><span>Haz clic en el nombre de un espacio para acercarte.</span></div><div id="mapa"><div id="teselas"></div><svg id="overlay" xmlns="http://www.w3.org/2000/svg" aria-label="Mapa de espacios protegidos"></svg><div id="popupMapa"></div><div id="mapaEstado">Satélite: Esri · arrastra para desplazarte · rueda para zoom</div></div><div id="capasPanel"></div><div id="leyenda"></div></section>
+<section id="resultado"></section>
+<p id="estadoSincronizacion" class="sync-status" aria-live="polite">Consultando correcciones publicadas…</p>
+</main>
+<footer>% del municipio: parte de la superficie municipal ocupada por el espacio. % del espacio: parte del espacio protegido que cae dentro del municipio. ⚠ = solape muy pequeño según el porcentaje de superficie municipal ocupada (no según el porcentaje del espacio protegido). Haz clic en un espacio de la lista para verlo en el mapa. En la búsqueda inversa puedes pulsar un municipio para abrir su ficha. Un municipio puede pertenecer a varias figuras a la vez, por lo que los porcentajes no se suman.</footer>
+
+
+
+<script src="data/RENPA_datos.js"></script>
+<script src="data/RENPA_geo.js"></script>
+<script src="config-publicacion.js"></script>
+<script src="correcciones-iniciales.js"></script>
+<script src="cargar-correcciones.js"></script>
+<script>
+window.RENPA_CARGAR_CORRECCIONES().catch(console.error).finally(function(){
+ const s=document.createElement('script');s.src='js/public.js';document.body.appendChild(s);
+});
+</script>
+</body>
+</html>
