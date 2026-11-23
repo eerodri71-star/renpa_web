@@ -117,8 +117,10 @@
 
    municipiosEspacio=[...muniValidos.values()].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
 
-   // Se representan todos los fragmentos cartográficos del espacio; las exclusiones solo afectan al listado municipal.
-   entradas=registros.filter(r=>!estaExcluida(r.cod,r.e)).map((r,i)=>({e:r.e,activa:true,ruido:false,color:colorDe(espacioActual.figura),key:'espacio||'+r.cod+'||'+i,cod:r.cod,municipio:DATOS[r.cod]?.nombre||r.cod}));
+   // En busqueda inversa se representa el POLIGONO COMPLETO del espacio, incluso fuera de municipios y en el mar.
+   // Los filtros y exclusiones solo afectan al listado de municipios, nunca recortan el limite protegido.
+   const geometriaCompleta=(window.RENPA_ESPACIOS_COMPLETOS||{})[espacioActual.key];
+   entradas=geometriaCompleta?[{e:{geom:geometriaCompleta,espacio:espacioActual.espacio,figura:espacioActual.figura,tipo:espacioActual.tipo},activa:true,ruido:false,color:colorDe(espacioActual.figura),key:'espacio-completo'}]:registros.map((r,i)=>({e:r.e,activa:true,ruido:false,color:colorDe(espacioActual.figura),key:'espacio||'+r.cod+'||'+i,cod:r.cod,municipio:DATOS[r.cod]?.nombre||r.cod}));
    limitesExtra=municipiosEspacio.map(m=>({cod:m.cod,geom:GEO[m.cod]?.mun,nombre:m.nombre})).filter(x=>x.geom);
    capaMun=null;
 
