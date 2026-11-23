@@ -29,8 +29,8 @@
  const catalogoEspacios=new Map();
 
  if(typeof GEO!=='undefined')Object.entries(GEO).forEach(([cod,g])=>(g.esp||[]).forEach(e=>{
-   const key=norm(e.figura)+'||'+norm(e.espacio);
-   if(!catalogoEspacios.has(key))catalogoEspacios.set(key,{key,figura:e.figura,espacio:e.espacio,registros:[]});
+   const key=norm(e.figura)+'||'+norm(e.espacio)+'||'+norm(e.tipo||'');
+   if(!catalogoEspacios.has(key))catalogoEspacios.set(key,{key,figura:e.figura,espacio:e.espacio,tipo:e.tipo||'',registros:[]});
    catalogoEspacios.get(key).registros.push({cod,e});
  }));
 
@@ -87,7 +87,7 @@
    visiblesEspacio.forEach(x=>{
      const li=el('li');
      li.appendChild(el('span',null,x.espacio));
-     li.appendChild(el('small',null,x.figura));
+     li.appendChild(el('small',null,x.figura+(x.tipo?' · '+x.tipo:'')));
      li.addEventListener('mousedown',ev=>{ev.preventDefault();elegirEspacio(x)});
      $sugEspacio.appendChild(li);
    });
@@ -96,7 +96,7 @@
 
  function elegirEspacio(x){
    espacioActual=x;
-   $qEspacio.value=x.espacio+' · '+x.figura;
+   $qEspacio.value=x.espacio+' · '+x.figura+(x.tipo?' · '+x.tipo:'');
    $sugEspacio.style.display='none';
    mostrarEspacio();
  }
@@ -124,7 +124,7 @@
 
    const cab=el('div','municipio');
    cab.appendChild(el('h2',null,espacioActual.espacio));
-   cab.appendChild(el('span',null,espacioActual.figura));
+   cab.appendChild(el('span',null,espacioActual.figura+(espacioActual.tipo?' · '+espacioActual.tipo:'')));
    $res.appendChild(cab);
    $res.appendChild(el('p','resumen',municipiosEspacio.length+' municipios con relación registrada en los datos cartográficos.'));
 
