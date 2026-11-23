@@ -1,0 +1,68 @@
+
+:root{--verde:#2f6b3a;--verde-claro:#e6f0e7;--texto:#1f2a22;--gris:#6b756d;--borde:#d5ddd6;--fondo:#f6f8f6}*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--fondo);color:var(--texto)}header img{display:block;width:100%;height:auto}main{max-width:860px;margin:0 auto;padding:24px 16px 48px}h1{font-size:1.5rem;margin:0 0 4px}.sub{color:var(--gris);margin:0 0 20px}.buscador{position:relative}#q{width:100%;padding:14px 16px;font-size:1.05rem;border:2px solid var(--borde);border-radius:10px;outline:none;background:#fff}#q:focus{border-color:var(--verde)}#sugerencias{position:absolute;left:0;right:0;top:100%;margin:4px 0 0;padding:0;list-style:none;background:#fff;border:1px solid var(--borde);border-radius:10px;max-height:280px;overflow-y:auto;z-index:10;display:none;box-shadow:0 6px 18px #0001}#sugerencias li{padding:10px 16px;cursor:pointer;display:flex;justify-content:space-between;gap:12px}#sugerencias li:hover,#sugerencias li.activo{background:var(--verde-claro)}#sugerencias small{color:var(--gris)}.opciones{margin:14px 0 0;font-size:.92rem;color:var(--gris)}.opciones label{cursor:pointer}#resultado{margin-top:28px}.municipio{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px}.municipio h2{margin:0;font-size:1.4rem}.municipio span{color:var(--gris)}.resumen{color:var(--gris);margin:0 0 18px}.grupo{margin-bottom:22px}.grupo h3{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--verde);margin:0 0 8px;padding-bottom:4px;border-bottom:2px solid var(--verde-claro)}.espacio{background:#fff;border:1px solid var(--borde);border-radius:10px;padding:12px 14px;margin-bottom:8px}.espacio .fila{display:flex;justify-content:space-between;gap:12px;align-items:baseline}.nombre{font-weight:600}.tipo{font-size:.78rem;background:var(--verde-claro);color:var(--verde);padding:2px 8px;border-radius:99px;margin-left:8px;font-weight:500}.pct{font-weight:700;color:var(--verde);white-space:nowrap}.barra{height:8px;background:var(--verde-claro);border-radius:99px;margin:8px 0 6px;overflow:hidden}.barra div{height:100%;background:var(--verde);border-radius:99px}.detalle{font-size:.85rem;color:var(--gris)}.revisar{color:#9a6700}.aviso{background:#fff4e5;border:1px solid #f0c27b;color:#7a4a00;border-radius:10px;padding:12px 14px;margin:8px 0 16px;font-size:.92rem}.espacio.clic{cursor:pointer}.espacio.clic:hover{border-color:var(--verde)}.espacio.ruido{background:#fff8f8;border-color:#efb8b8;border-style:dashed}.espacio.ruido .barra div{background:#d62828}.espacio.ruido .pct,.ruidoTxt{color:#b42323;font-weight:600}.vacio{background:#fff;border:1px dashed var(--borde);border-radius:10px;padding:20px;color:var(--gris);text-align:center}footer{max-width:860px;margin:0 auto;padding:0 16px 32px;font-size:.8rem;color:var(--gris)}
+#mapaCont{display:none;margin-top:24px}.mapaControles{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;font-size:.9rem;color:var(--gris)}.mapaControles select{padding:7px 10px;border:1px solid var(--borde);border-radius:7px;background:#fff;color:var(--texto)}#mapa{height:480px;border-radius:12px;border:1px solid var(--borde);background:#dce5e8;position:relative;overflow:hidden;touch-action:none;isolation:isolate;cursor:grab;user-select:none}#mapa.arrastrando{cursor:grabbing}#teselas,#overlay{position:absolute;inset:0;width:100%;height:100%}#teselas{overflow:hidden}#teselas img{position:absolute;width:256px;height:256px;max-width:none;user-select:none;-webkit-user-drag:none}#overlay{overflow:visible;pointer-events:auto}#mapaEstado{position:absolute;left:8px;bottom:8px;background:#ffffffdf;border-radius:5px;padding:4px 7px;font-size:11px;color:#334;z-index:5;pointer-events:none}#popupMapa{display:none;position:absolute;z-index:6;max-width:250px;max-height:150px;overflow:auto;background:white;border:1px solid #aab5ac;border-radius:7px;padding:9px 11px;box-shadow:0 3px 12px #0003;font-size:12px;transform:translate(-50%,-100%)}#capasPanel{margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}.pgrupo{background:#fff;border:1px solid var(--borde);border-radius:10px;padding:8px 12px}.pcab{display:block;font-weight:600;font-size:.85rem;color:var(--verde);margin-bottom:4px;cursor:pointer}.pitem{display:flex;align-items:center;gap:6px;font-size:.85rem;padding:2px 0;cursor:pointer}.pitem i{width:12px;height:12px;border-radius:3px;flex:none}.pitem small{color:var(--gris);margin-left:auto;white-space:nowrap}#leyenda{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.85rem;color:var(--gris);margin-top:8px}#leyenda i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:6px}
+
+#gestionIncidencias{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:18px}
+.grupoGestion{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:12px;background:#fff;border:1px solid var(--borde);border-radius:10px}
+#gestionIncidencias button,.btnExcluir,.btnConfirmar{border:1px solid var(--borde);border-radius:7px;padding:8px 12px;background:#fff;color:var(--texto);cursor:pointer;font:inherit;font-size:.85rem}
+#gestionIncidencias button:hover,.btnExcluir:hover,.btnConfirmar:hover{border-color:var(--verde);background:var(--verde-claro)}
+.ayudaGestion{font-size:.8rem;line-height:1.4;color:var(--gris);margin:0}
+#estadoRegistro,#estadoConfirmaciones{font-size:.8rem;color:var(--gris)}
+#estadoRegistro.conectado,#estadoConfirmaciones.conectado{color:var(--verde);font-weight:600}
+.btnExcluir{margin-top:9px;color:#9b3333;border-color:#e5bcbc}
+.btnExcluir:hover{background:#fff1f1;border-color:#c77}
+.btnConfirmar{margin-top:9px;color:#28743b;border-color:#a9cdb0;background:#f3faf4}
+.btnConfirmar:hover{background:#e2f1e5;border-color:#5b9b68}
+
+.modos{display:flex;gap:8px;margin:18px 0 16px;flex-wrap:wrap}.modoBtn{border:1px solid var(--borde);background:#fff;color:var(--texto);padding:10px 16px;border-radius:9px;font:inherit;font-weight:600;cursor:pointer}.modoBtn.activo{background:var(--verde);border-color:var(--verde);color:#fff}
+#busquedaEspacio{display:none;margin-bottom:16px}.ayudaModo{font-size:.88rem;color:var(--gris);margin:6px 0 12px}.buscadorEspacio{position:relative}#qEspacio{width:100%;padding:14px 16px;font-size:1.05rem;border:2px solid var(--borde);border-radius:10px;outline:none;background:#fff}#qEspacio:focus{border-color:var(--verde)}#sugerenciasEspacio{position:absolute;left:0;right:0;top:100%;margin:4px 0 0;padding:0;list-style:none;background:#fff;border:1px solid var(--borde);border-radius:10px;max-height:280px;overflow-y:auto;z-index:10;display:none;box-shadow:0 6px 18px #0001}#sugerenciasEspacio li{padding:10px 16px;cursor:pointer;display:flex;justify-content:space-between;gap:12px}#sugerenciasEspacio li:hover,#sugerenciasEspacio li.activo{background:var(--verde-claro)}#sugerenciasEspacio small{color:var(--gris)}
+.municipiosEspacio{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:7px;margin-top:12px}.municipioEspacio{background:#fff;border:1px solid var(--borde);border-radius:8px;padding:9px 11px;display:flex;justify-content:space-between;align-items:center;gap:8px}.municipioEspacio button{border:0;background:none;color:var(--verde);font:inherit;font-weight:600;cursor:pointer;text-align:left}.municipioEspacio small{color:var(--gris);white-space:nowrap}
+
+/* Presentación de la primera versión modular */
+:root{--verde:#285f3b;--verde-claro:#e7f0e8;--borde:#d6e1d8;--fondo:#f4f7f4}
+body{background:linear-gradient(180deg,#eaf1eb 0,#f6f8f6 250px);color:#203027}
+header{background:white;box-shadow:0 2px 12px #1b3b2710}
+header img{max-height:210px;object-fit:cover;object-position:center}
+main{max-width:1040px;padding-top:30px}
+main>h1{font-size:clamp(1.5rem,3vw,2.05rem);letter-spacing:-.025em}
+.sub{line-height:1.55;font-size:1rem}
+#resultado{margin-top:26px}
+.espacio{box-shadow:0 2px 9px #1c39220a}
+footer{max-width:1040px;line-height:1.6}
+button{transition:filter .15s ease}
+button:hover{filter:brightness(.96)}
+@media(max-width:640px){main{padding:20px 14px 38px}header img{max-height:125px}#mapa{min-height:320px}}
+
+/* RENPA v2: identidad visual y separación pública/interna */
+:root{--verde:#215a3c;--verde-claro:#e7f1e9;--fondo:#f6f8f5;--borde:#d9e4db;--gris:#647368}
+body{background:#f6f8f5;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{background:#fff;border-bottom:1px solid #e5eae5;box-shadow:none}
+header img{width:100%;max-height:112px;object-fit:contain;object-position:center;background:#fff}
+.topbar{background:#183f2e;color:#fff}
+.topbar-inner{max-width:1160px;margin:auto;min-height:66px;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:12px 20px}
+.brand{font-size:1.3rem;font-weight:800;letter-spacing:.055em;display:flex;align-items:center;gap:11px}
+.brand-mark{width:34px;height:34px;border-radius:10px;background:#ffffff24;display:grid;place-items:center;color:#c6e6cb;font-size:1.4rem}
+.brand small{font-weight:400;letter-spacing:0;font-size:.83rem;color:#cbded0;border-left:1px solid #ffffff50;padding-left:11px}
+.top-status{font-size:.82rem;background:#ffffff1a;padding:8px 12px;border-radius:99px;white-space:nowrap}
+.status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#a6dfb4;margin-right:7px}
+main{max-width:1160px;padding:38px 20px 54px}
+.section-tag{font-size:.72rem;letter-spacing:.13em;font-weight:800;color:#538261;margin-bottom:12px}
+main>h1{max-width:800px;font-size:clamp(1.75rem,3.7vw,2.65rem);line-height:1.17;letter-spacing:-.045em;margin:0 0 14px}
+.sub{max-width:750px;color:#59695e;font-size:1.04rem;margin-bottom:24px}
+.info-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 28px}
+.info-strip>div{background:white;border:1px solid var(--borde);border-radius:12px;padding:15px 17px;display:flex;flex-direction:column;gap:5px}
+.info-strip strong{font-size:.91rem;color:#245d40}.info-strip span{font-size:.81rem;color:#66776c;line-height:1.45}
+.modos{padding:5px;background:#e8efe9;border-radius:12px;display:inline-flex;gap:4px;margin:2px 0 20px}
+.modoBtn{border:0;background:transparent;border-radius:9px;padding:12px 18px;font-size:.93rem}
+.modoBtn.activo{background:#fff;color:#245c3f;box-shadow:0 1px 5px #173a261c}
+#q,#qEspacio{border:1px solid #cbd9ce;box-shadow:0 2px 9px #1d422308;border-radius:12px;padding:17px 18px}
+#q:focus,#qEspacio:focus{outline:3px solid #2b714c24;border-color:#387650}
+#mapa{height:530px;border-radius:14px}
+#mapaCont{background:#fff;border:1px solid var(--borde);border-radius:16px;padding:15px;margin-top:25px;box-shadow:0 4px 20px #1b39240b}
+#resultado{margin-top:32px}.espacio{padding:15px 18px;border-radius:12px}
+.grupo h3{font-size:.8rem;letter-spacing:.08em}
+.security-note{background:#fff7e9;border:1px solid #f0d2a3;border-radius:12px;padding:14px 16px;color:#744b1d;line-height:1.55;font-size:.9rem;margin:16px 0 22px}
+footer{max-width:1160px;border-top:1px solid #dbe6dd;padding:23px 20px 45px}
+@media(max-width:720px){.topbar-inner{padding:10px 14px}.brand small{display:none}.top-status{font-size:.73rem}.info-strip{grid-template-columns:1fr}.info-strip>div{padding:11px 13px}main{padding:27px 14px 42px}.modos{display:flex}.modoBtn{flex:1;padding:10px 7px;font-size:.82rem}#mapa{height:380px}#mapaCont{padding:10px}header img{max-height:90px}}
+
+.sync-status{color:#526b58;font-size:.85rem;margin:15px 0}
