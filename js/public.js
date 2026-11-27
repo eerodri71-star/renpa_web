@@ -37,7 +37,8 @@
  Object.keys(window.RENPA_ESPACIOS_COMPLETOS||{}).forEach(key=>{if(!catalogoEspacios.has(key)){const [figura,espacio,tipo]=key.split('||');catalogoEspacios.set(key,{key,figura,espacio,tipo,registros:[]});}});
  const listaEspacios=[...catalogoEspacios.values()].sort((a,b)=>a.espacio.localeCompare(b.espacio,'es')||a.figura.localeCompare(b.figura,'es'));
  const lista=Object.entries(DATOS).map(([cod,m])=>({cod,nombre:m.nombre,provincia:m.provincia,n:norm(m.nombre),ruido:m.espacios.some(e=>e.clasificacion==='RUIDO')})).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
- const COLORES={'Espacios Naturales Protegidos':'#2f6b3a','Red Natura 2000':'#1f6fb2','Reserva de la Biosfera':'#d98a00','ZEPIM':'#8e3fb0'},colorDe=f=>COLORES[f]||'#555555';
+ const grupos32=[["Legislación nacional y autonómica", [["Parque Nacional", "Parques Nacionales", "#174b32"], ["Parque Natural", "Parques Naturales", "#43864b"], ["Reserva Natural", "Reservas Naturales", "#86b85b"], ["Paraje Natural", "Parajes Naturales", "#a5aa42"], ["Paisaje Protegido", "Paisajes Protegidos", "#c4a35a"], ["Monumento Natural", "Monumentos Naturales", "#bd7841"], ["Reserva Natural Concertada", "Reservas Naturales Concertadas", "#648b78"], ["Parque Periurbano", "Parques Periurbanos", "#8dba96"]]], ["Red Natura 2000", [["ZEPA", "ZEPA", "#5287c5"], ["ZEC", "ZEC", "#319dba"]]], ["Instrumentos y acuerdos internacionales", [["Reserva Biosfera", "Reservas de la Biosfera", "#9876bd"], ["ZEPIM", "ZEPIM", "#435caa"]]], ["Otras delimitaciones cartográficas", [["LIC", "LIC", "#687b9c"], ["Espacio Natural", "Espacio Natural", "#64748b"], ["Zona de protección del Parque Nacional", "Zona de protección del Parque Nacional", "#a0a0a0"], ["Zona de protección de la Reserva Natural", "Zona de protección de la Reserva Natural", "#8b9299"], ["Zona de protección del Monumento Natural", "Zona de protección del Monumento Natural", "#a38e80"]]]];
+ const tipos32=grupos32.flatMap(g=>g[1]); const tipo32=t=>tipos32.find(x=>norm(x[0])===norm(t||"")); const colorDe=t=>tipo32(t)?.[2]||"#777777"; const etiqueta32=t=>tipo32(t)?.[1]||t;
 
  let encuadre=null, punto=null, consultaId=0;
  let actual=null,idxActivo=-1,visibles=[],entradas=[],capaMun=null,zoom=7,centro={x:0,y:0},arrastre=null,ancho=0,alto=0,fondo='satellite';
@@ -64,7 +65,7 @@
  function cambiarModo(nuevo){
    document.getElementById('inicio').hidden=true;document.getElementById('visor').hidden=false;document.getElementById('homeBack').hidden=false;
 
-   modo=nuevo; punto=null; consultaId++; document.getElementById('busquedaPunto').hidden=nuevo!=='punto'; document.getElementById('tabPunto').classList.toggle('activo',nuevo==='punto');
+   modo=nuevo; $mapa.classList.toggle('modo-punto', nuevo==='punto'); punto=null; consultaId++; document.getElementById('busquedaPunto').hidden=nuevo!=='punto'; document.getElementById('tabPunto').classList.toggle('activo',nuevo==='punto');
    actual=null;
    espacioActual=null;
    entradas=[];
@@ -81,6 +82,7 @@
    $tabEspacio.classList.toggle('activo',nuevo==='espacio');
 
  vistaInicial();
+ configurar20(nuevo);
  }
 
  function sugerirEspacios(){
@@ -125,7 +127,7 @@
    // En busqueda inversa se representa el POLIGONO COMPLETO del espacio, incluso fuera de municipios y en el mar.
    // Los filtros y exclusiones solo afectan al listado de municipios, nunca recortan el limite protegido.
    const geometriaCompleta=(window.RENPA_ESPACIOS_COMPLETOS||{})[espacioActual.key];
-   entradas=geometriaCompleta?[{e:{geom:geometriaCompleta,espacio:espacioActual.espacio,figura:espacioActual.figura,tipo:espacioActual.tipo},activa:true,ruido:false,color:colorDe(espacioActual.figura),key:'espacio-completo'}]:registros.map((r,i)=>({e:r.e,activa:true,ruido:false,color:colorDe(espacioActual.figura),key:'espacio||'+r.cod+'||'+i,cod:r.cod,municipio:DATOS[r.cod]?.nombre||r.cod}));
+   entradas=geometriaCompleta?[{e:{geom:geometriaCompleta,espacio:espacioActual.espacio,figura:espacioActual.figura,tipo:espacioActual.tipo},activa:true,ruido:false,color:colorDe(espacioActual.tipo),key:'espacio-completo'}]:registros.map((r,i)=>({e:r.e,activa:true,ruido:false,color:colorDe(espacioActual.tipo),key:'espacio||'+r.cod+'||'+i,cod:r.cod,municipio:DATOS[r.cod]?.nombre||r.cod}));
    limitesExtra=municipiosEspacio.map(m=>({cod:m.cod,geom:GEO[m.cod]?.mun,nombre:m.nombre})).filter(x=>x.geom);
    capaMun=null;
 
@@ -166,7 +168,7 @@
 
    $leyenda.innerHTML='';
    const it=el('span'),sw=el('i');
-   sw.style.background=colorDe(espacioActual.figura);
+   sw.style.background=colorDe(espacioActual.tipo);
    it.appendChild(sw);
    it.appendChild(document.createTextNode(espacioActual.espacio));
    $leyenda.appendChild(it);
@@ -238,6 +240,7 @@
    if(y<0||y>=n)return'';
    x=((x%n)+n)%n;
    if(fondo==='satellite')return`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`;
+   if(fondo==='topo')return`https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/${z}/${y}/${x}`;
    if(fondo==='normal')return`https://tile.openstreetmap.org/${z}/${x}/${y}.png`;
    return'';
  }
@@ -262,7 +265,7 @@
        $tiles.appendChild(im);
      }
    }
-   $estado.textContent=(fondo==='satellite'?'Satélite: Esri':fondo==='normal'?'Mapa normal: OpenStreetMap':'Sin mapa base');
+   $estado.textContent=(fondo==='satellite'?'Satélite: Esri':fondo==='normal'?'© OpenStreetMap contributors':fondo==='topo'?'Topográfico: Esri y colaboradores':'Sin mapa base');
    $svg.setAttribute('viewBox',`0 0 ${ancho} ${alto}`);
  }
 
@@ -282,8 +285,7 @@
    t.appendChild(el('strong',null,e.espacio));
    t.appendChild(el('br'));
    t.appendChild(document.createTextNode(e.figura+(e.tipo?' ('+e.tipo+')':'')));
-   t.appendChild(el('br'));
-   t.appendChild(document.createTextNode(fmt(e.pct_municipio)+' % del municipio · '+fmt(e.solape_ha)+' ha'));
+   if(modo==='municipio' && e.pct_municipio!=null && Number.isFinite(Number(e.pct_municipio))){t.appendChild(el('br'));t.appendChild(document.createTextNode(fmt(e.pct_municipio)+' % del municipio · '+fmt(e.solape_ha)+' ha'));}
    cont.appendChild(t);
  }
 
@@ -365,7 +367,7 @@
    }
 
    const hits=entradas.filter(en=>
-     en.activa&&contiene(en.e.geom,p)
+     en.activa&&acepta20(en.e)&&contiene(en.e.geom,p)
    );
 
    if(!hits.length){
@@ -406,12 +408,12 @@
    });
 
    entradas.forEach(en=>{
-     if(!en.activa)return;
+     if(!en.activa||!acepta20(en.e))return;
 
      const p=document.createElementNS(ns,'path');
      p.setAttribute('d',geometriaPath(en.e.geom));
      p.setAttribute('fill',en.color);
-     p.setAttribute('fill-opacity',en.ruido?'.15':'.4');
+     p.setAttribute('fill-opacity',String(opacidad20));
      p.setAttribute('stroke',en.color);
      p.setAttribute('stroke-width',en.ruido?'2':'1.5');
      p.setAttribute('vector-effect','non-scaling-stroke');
@@ -466,7 +468,7 @@
    $panel.innerHTML='';
    const grupos={};
    entradas.forEach(en=>{
-     const n=en.ruido?'Solapes descartados (ruido)':en.e.figura;
+     const n=en.ruido?'Solapes descartados (ruido)':etiqueta32(en.e.tipo);
      (grupos[n]=grupos[n]||[]).push(en);
    });
 
@@ -481,7 +483,7 @@
 
      chkG.addEventListener('change',()=>{
        hijos.forEach(h=>{
-         h.checked=chkG.checked;
+         h.checked=chkG.checked;h.c.checked=chkG.checked;
          h.en.activa=chkG.checked;
        });
        dibujarGeometrias();
@@ -492,7 +494,7 @@
        c.type='checkbox';
        c.checked=true;
        c.addEventListener('change',()=>{
-         en.activa=c.checked;
+         en.activa=c.checked;hijos.find(h=>h.en===en).checked=c.checked;
          chkG.checked=hijos.every(h=>h.checked);
          dibujarGeometrias();
        });
@@ -506,9 +508,9 @@
        fila.appendChild(c);
        fila.appendChild(sw);
        fila.appendChild(document.createTextNode(en.e.espacio+(en.e.tipo?' ('+en.e.tipo+')':'')));
-       fila.appendChild(el('small',null,fmt(en.e.pct_municipio)+' %'));
+       if(modo==='municipio' && en.e.pct_municipio!=null && Number.isFinite(Number(en.e.pct_municipio))) fila.appendChild(el('small',null,fmt(en.e.pct_municipio)+' %'));
        bloque.appendChild(fila);
-       hijos.push({checked:true,en});
+       hijos.push({checked:true,en,c});
      });
 
      $panel.appendChild(bloque);
@@ -531,12 +533,12 @@
 
    g.esp.forEach(e=>{
      if(!e.geom)return;
-     if(!visiblePublico(actual,e))return;
+     if(!visiblePublico(actual,e)||!acepta20(e))return;
      const ruido=false;
-     const col=ruido?'#d62828':colorDe(e.figura);
+     const col=ruido?'#d62828':colorDe(e.tipo);
      entradas.push({e,activa:true,ruido,color:col,key:e.figura+'||'+e.espacio+'||'+(e.tipo||'')});
      if(ruido)hayRuido=true;
-     else figuras.add(e.figura);
+     else figuras.add(e.tipo);
    });
 
    requestAnimationFrame(()=>{
@@ -558,7 +560,7 @@
    };
 
    item('#111','Límite municipal','solid');
-   [...figuras].sort().forEach(f=>item(colorDe(f),f));
+   [...figuras].sort().forEach(f=>item(colorDe(f),etiqueta32(f)));
    if(hayRuido)item('#d62828','Solape descartado (ruido)','dashed');
    cerrarPopup();
    dibujarGeometrias();
@@ -610,7 +612,7 @@
    if(!actual)return;
 
    const m=DATOS[actual],
-   espacios=m.espacios.filter(e=>visiblePublico(actual,e)),
+   espacios=m.espacios.filter(e=>visiblePublico(actual,e)&&acepta20(e)),
    nReales=espacios.length;
 
    const cab=el('div','municipio');
@@ -619,7 +621,8 @@
    $res.appendChild(cab);
 
 
-   if(!espacios.length){
+   resumen3();
+ if(!espacios.length){
      $res.appendChild(el('div','vacio','Este municipio no tiene espacios protegidos de la RENPA registrados.'));
      return;
    }
@@ -733,17 +736,36 @@
  });
 
 
- function vistaInicial(){ $mapaCont.style.display='block'; $panel.innerHTML='';$leyenda.innerHTML=''; requestAnimationFrame(()=>{if(actual||espacioActual||punto)return;ancho=$mapa.clientWidth;alto=$mapa.clientHeight;zoom=7;centro=merc(-4.6,37.5);encuadre={zoom,centro:{...centro}};dibujarGeometrias();}); }
+ function vistaInicial(){ $mapaCont.style.display='block'; $panel.innerHTML='';$leyenda.innerHTML=''; requestAnimationFrame(()=>{if(actual||espacioActual||punto||modo==='explorar'||modo==='provincia')return;ancho=$mapa.clientWidth;alto=$mapa.clientHeight;zoom=7;centro=merc(-4.6,37.5);encuadre={zoom,centro:{...centro}};dibujarGeometrias();}); }
  const ficha=document.getElementById('ficha'), abrir=document.getElementById('abrirFicha'), contenido=document.getElementById('contenidoFicha');
  contenido.append($panel,$leyenda); function desplegar(on){ficha.classList.toggle('abierta',on);abrir.setAttribute('aria-expanded',String(on));abrir.textContent=matchMedia('(min-width:721px)').matches?'Resultados':(on?'Resultados ⌄':'Resultados ⌃');} abrir.onclick=()=>desplegar(!ficha.classList.contains('abierta'));
- new MutationObserver(()=>{if($res.children.length)desplegar(true);else desplegar(false);}).observe($res,{childList:true});
+ new MutationObserver(()=>{if(modo==='explorar')desplegar(false);else if($res.children.length)desplegar(true);else desplegar(false);}).observe($res,{childList:true});
  document.getElementById('tabPunto').onclick=()=>cambiarModo('punto');
  function parsePunto(t){t=t.trim();let m; m=t.match(/^\s*(-?\d+(?:\.\d+)?)\s*[,; ]\s*(-?\d+(?:\.\d+)?)\s*$/)||t.match(/^\s*(-?\d+,\d+)\s*;\s*(-?\d+,\d+)\s*$/);if(!m)throw Error('Introduce latitud, longitud en grados decimales.');let lat=Number(m[1].replace(',','.')),lon=Number(m[2].replace(',','.'));if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)throw Error('Coordenadas fuera de rango.');return [lon,lat];}
  const error=document.getElementById('errorPunto');
  document.getElementById('formPunto').onsubmit=e=>{e.preventDefault();try{consultarPunto(...parsePunto(document.getElementById('qPunto').value));}catch(e){error.textContent=e.message;}};
- async function consultarPunto(lon,lat){if(!Number.isFinite(lon)||!Number.isFinite(lat))return;const id=++consultaId;error.textContent='Consultando cartografía…';try{const datosPunto=window.RENPA_ESPACIOS_COMPLETOS;if(!datosPunto||!Object.keys(datosPunto).length)throw Error('Cartografía no disponible');if(id!==consultaId||modo!=='punto')return;punto=[lon,lat];entradas=[];capaMun=null;limitesExtra=[];$panel.innerHTML='';$leyenda.innerHTML='';$res.innerHTML='';const hits=Object.entries(datosPunto).filter(([k,g])=>contiene(g,punto));$res.append(el('h2',null,hits.length?hits.length+' figuras de protección':'Sin coincidencias en las capas consultadas'),el('p',null,lat.toFixed(6)+', '+lon.toFixed(6)));for(const [key,g] of hits){const x=catalogoEspacios.get(key);const card=el('div','espacio');card.append(el('strong',null,x.espacio),el('p',null,x.figura+' · '+x.tipo));const b=el('button',null,'Ver espacio completo');b.onclick=()=>{cambiarModo('espacio');elegirEspacio(x);};card.append(b);$res.append(card);entradas.push({e:{geom:window.RENPA_ESPACIOS_COMPLETOS[key],espacio:x.espacio,figura:x.figura,tipo:x.tipo},activa:true,color:colorDe(x.figura),key});}$res.append(el('p','detalle','Consulta orientativa sobre geometría simplificada.'));error.textContent='';document.activeElement.blur();ancho=$mapa.clientWidth;alto=$mapa.clientHeight;zoom=13;centro=merc(lon,lat);encuadre={zoom,centro:{...centro}};dibujarGeometrias();}catch(e){if(id===consultaId)error.textContent='No se pudo realizar la consulta. Comprueba que la cartografía completa está disponible.';}}
+ async function consultarPunto(lon,lat){if(!Number.isFinite(lon)||!Number.isFinite(lat))return;const id=++consultaId;error.textContent='Consultando cartografía…';try{const datosPunto=window.RENPA_ESPACIOS_COMPLETOS;if(!datosPunto||!Object.keys(datosPunto).length)throw Error('Cartografía no disponible');if(id!==consultaId||modo!=='punto')return;punto=[lon,lat];entradas=[];capaMun=null;limitesExtra=[];$panel.innerHTML='';$leyenda.innerHTML='';$res.innerHTML='';const hits=Object.entries(datosPunto).filter(([k,g])=>acepta20(catalogoEspacios.get(k))&&contiene(g,punto));$res.append(el('h2',null,hits.length?hits.length+' figuras de protección':'Sin coincidencias en las capas consultadas'),el('p',null,lat.toFixed(6)+', '+lon.toFixed(6)));for(const [key,g] of hits){const x=catalogoEspacios.get(key);const card=el('div','espacio');card.append(el('strong',null,x.espacio),el('p',null,x.figura+' · '+x.tipo));const b=el('button',null,'Ver espacio completo');b.onclick=()=>{cambiarModo('espacio');elegirEspacio(x);};card.append(b);$res.append(card);entradas.push({e:{geom:window.RENPA_ESPACIOS_COMPLETOS[key],espacio:x.espacio,figura:x.figura,tipo:x.tipo},activa:true,color:colorDe(x.tipo),key});}$res.append(el('p','detalle','Consulta orientativa sobre geometría simplificada.'));error.textContent='';document.activeElement.blur();ancho=$mapa.clientWidth;alto=$mapa.clientHeight;zoom=13;centro=merc(lon,lat);encuadre={zoom,centro:{...centro}};dibujarGeometrias();}catch(e){if(id===consultaId)error.textContent='No se pudo realizar la consulta. Comprueba que la cartografía completa está disponible.';}}
  if(typeof ResizeObserver!=='undefined')new ResizeObserver(()=>{if(ancho&&alto)dibujarGeometrias();}).observe($mapa);
+ const areasProvincia21={"Almería": 876728.4632681584, "Cádiz": 744493.7462746189, "Córdoba": 1376966.32801331, "Granada": 1263619.6413712173, "Huelva": 1015159.389310151, "Jaén": 1348391.3208853982, "Málaga": 730680.5025920875, "Sevilla": 1404146.8767903245};
+ function nombreCSV21(){const n=modo==='municipio'?DATOS[actual]?.nombre:modo==='espacio'? [espacioActual?.espacio,espacioActual?.tipo].filter(Boolean).join('_'):modo==='provincia'?provincia20:modo==='punto'&&punto?punto.slice().reverse().map(v=>Number(v).toFixed(6)).join('_'):'Andalucia';return ['RENPA',modo,n||'consulta',filtro20].filter(Boolean).map(v=>norm(v).replace(/[^a-z0-9.-]+/g,'_')).join('_')+'.csv'}
+ let opacidad20=.4, filtro20='', provincia20='';
+ const extra20=document.getElementById('extra20');
+ function acepta20(e){return e&&(!filtro20||norm(e.tipo)===norm(filtro20))}
+ function filas20(){return Object.entries(DATOS).flatMap(([cod,m])=>m.espacios.filter(e=>visiblePublico(cod,e)&&acepta20(e)).map(e=>({cod,m,e}))).filter(r=>modo==='municipio'?r.cod===actual:modo==='espacio'?espacioActual&&claveRelacion(r.cod,r.e).slice(r.cod.length+2)===espacioActual.key:modo==='provincia'?r.m.provincia===provincia20:modo==='punto'?false:true)}
+ function exportar20(){let rows=[['Provincia','Municipio','Código','Espacio','Grupo','Figura','Hectáreas','% municipio','% espacio'],...filas20().map(({cod,m,e})=>[m.provincia,m.nombre,cod,e.espacio,e.figura,e.tipo,e.solape_ha,e.pct_municipio,e.pct_espacio])];if(modo==='punto')rows=[['Latitud','Longitud','Espacio','Figura'],...entradas.filter(x=>acepta20(x.e)).map(x=>[punto[1],punto[0],x.e.espacio,x.e.tipo])];if(modo==='provincia'){rows[0].push('% provincia (relación municipal)');for(let i=1;i<rows.length;i++)rows[i].push(100*Number(rows[i][6])/areasProvincia21[provincia20]);}const b=new Blob(['\ufeff'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""').replace(/^(?=[=+@-][^0-9])/g,"'")+'"').join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'});const a=el('a');a.href=URL.createObjectURL(b);a.download=nombreCSV21();a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+ function consulta20(){return {modo,cod:actual,key:espacioActual?.key,punto,provincia:provincia20,filtro:filtro20}}
+ function abrir20(q){filtro20=q.filtro||'';cambiarModo(q.modo);if(q.modo==='municipio'&&DATOS[q.cod])elegir({cod:q.cod,nombre:DATOS[q.cod].nombre});if(q.modo==='espacio'&&catalogoEspacios.has(q.key))elegirEspacio(catalogoEspacios.get(q.key));if(q.modo==='punto'&&q.punto)consultarPunto(...q.punto);if(q.modo==='provincia'){provincia20=q.provincia;territorio20()}}
+ function favoritos20(){try{return JSON.parse(localStorage.getItem('renpa_favoritos20')||'[]')}catch(e){return []}}
+ function pintarFav20(){const box=document.getElementById('favoritos20');if(!box)return;box.replaceChildren(el('strong',null,'Mis favoritos'));favoritos20().forEach((q,i)=>{const b=el('button',null,q.nombre);b.onclick=()=>abrir20(q);const x=el('button',null,'×');x.setAttribute('aria-label','Eliminar '+q.nombre);x.onclick=()=>{const a=favoritos20();a.splice(i,1);localStorage.setItem('renpa_favoritos20',JSON.stringify(a));pintarFav20()};box.append(b,x)})}
+ function territorio20(){const rows=filas20(), keys=new Set(rows.map(r=>claveRelacion(r.cod,r.e).slice(r.cod.length+2)));if(modo==='explorar')for(const k of catalogoEspacios.keys())keys.add(k);entradas=[...keys].map(key=>{const x=catalogoEspacios.get(key);return {key,e:{...x,geom:window.RENPA_ESPACIOS_COMPLETOS[key]},activa:true,color:colorDe(x.tipo)}}).filter(x=>x.e.geom&&acepta20(x.e));$res.replaceChildren(el('h2',null,modo==='provincia'?provincia20:'Explorar Andalucía'),el('p',null,entradas.length+' espacios o figuras'));if(modo==='provincia')$res.append(el('p','detalle','Superficie provincial: '+areasProvincia21[provincia20].toLocaleString('es-ES',{maximumFractionDigits:2})+' ha. Porcentajes calculados con las relaciones municipales admitidas; no sumar entre figuras.'));if(modo==='explorar')$res.append(el('p','detalle','Selecciona una figura de protección para filtrar el mapa. Pulsa sobre un espacio para identificarlo.'));if(modo==='provincia')for(const en of entradas){const b=el('button',null,en.e.espacio+' · '+en.e.tipo);b.onclick=()=>{cambiarModo('espacio');elegirEspacio(catalogoEspacios.get(en.key))};const c=el('div','espacio');c.append(b);if(modo==='provincia'){const rr=rows.filter(r=>claveRelacion(r.cod,r.e).slice(r.cod.length+2)===en.key);const ha=rr.reduce((a,r)=>a+Number(r.e.solape_ha||0),0),pe=rr.reduce((a,r)=>a+Number(r.e.pct_espacio||0),0),pp=100*ha/areasProvincia21[provincia20];const fmt=v=>v.toLocaleString('es-ES',{maximumFractionDigits:2});c.append(el('div','detalle',fmt(ha)+' ha · '+fmt(pp)+' % de la provincia · '+fmt(pe)+' % del espacio'));} $res.append(c)}if(modo==='provincia'){resumen3();construirPanel();}else{$panel.replaceChildren();$leyenda.replaceChildren();}requestAnimationFrame(()=>{ancho=$mapa.clientWidth;alto=$mapa.clientHeight;zoom=7;centro=merc(-4.6,37.5);encuadre={zoom,centro:{...centro}};dibujarGeometrias()})}
+function resumen3(){const s=window.RENPA_STATS, ids=actual?[actual]:Object.keys(DATOS).filter(k=>DATOS[k].provincia===provincia20);const box=el('section','stats3');box.append(el('h3',null,'Resumen territorial'));if(!s?.municipios||!s?.correcciones){box.append(el('p',null,'No se han cargado las estadísticas. Actualiza la aplicación.'));$res.prepend(box);return;}const eq=(a,b)=>JSON.stringify([...new Set(a)].sort())===JSON.stringify([...new Set(b)].sort());if(!eq(s.correcciones.exclusiones,incidencias.map(x=>x.clave))||!eq(s.correcciones.confirmaciones,confirmaciones.map(x=>x.clave))){box.append(el('p',null,'Estadísticas pendientes de recalcular con las correcciones actuales.'));$res.prepend(box);return}let total=0,ha=0,fig={};for(const id of ids){const v=s.municipios[id];if(!v)continue;total+=v.total;ha+=filtro20?v.figuras[filtro20]||0:v.protegida;for(const [f,n] of Object.entries(v.figuras))fig[f]=(fig[f]||0)+n}const pct=total?100*ha/total:0;box.append(el('p',null,'Superficie territorial: '+fmt(total)+' ha'),el('strong',null,'Superficie protegida: '+fmt(ha)+' ha'));const ring=el('div','ring3',fmt(pct)+' %');ring.style.background=`conic-gradient(#2f6b3a ${pct}%,#dce5dc 0)`;box.append(ring);const rows=[['Figura','ha','% territorio'],['Total territorial',total,100],['Unión protegida',ha,pct]];for(const [f,n] of Object.entries(fig).sort((a,b)=>b[1]-a[1])){if(filtro20&&f!==filtro20)continue;box.append(el('div','detalle',etiqueta32(f)+' · '+fmt(n)+' ha · '+fmt(100*n/total)+' %'));rows.push([f,n,100*n/total])}box.append(el('small',null,'Unión de intersecciones admitidas; las figuras pueden superponerse.'));const btn=el('button',null,'CSV estadísticas');btn.onclick=()=>descargar3('\ufeff'+rows.map(r=>r.join(';')).join('\r\n'),nombreCSV21().replace('.csv','_estadisticas.csv'),'text/csv');box.append(btn);$res.prepend(box)}
+function descargar3(data,name,type){const a=el('a');a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),3000)}
+
+ function configurar20(n){if(n==='espacio')filtro20='';extra20.hidden=false;extra20.replaceChildren();const sel=el('select');sel.setAttribute('aria-label','Figura de protección');sel.append(new Option('Todas las figuras',''));const disponibles=[...new Set(listaEspacios.map(x=>x.tipo))]; for(const [nombre,tipos] of grupos32){const grupo=el('optgroup');grupo.label=nombre;for(const [tipo,label] of tipos){const real=disponibles.find(t=>norm(t)===norm(tipo));if(real)grupo.append(new Option(label,real));}if(grupo.children.length)sel.append(grupo);}const otros=disponibles.filter(t=>!tipo32(t));if(otros.length){const g=el('optgroup');g.label='Otras delimitaciones cartográficas';otros.forEach(t=>g.append(new Option(t,t)));sel.append(g);}sel.value=filtro20;sel.onchange=()=>{filtro20=sel.value;if(actual)mostrar();else if(punto)consultarPunto(...punto);else if(n==='provincia'||n==='explorar')territorio20();else if(n==='espacio'&&espacioActual){mostrarEspacio();}else dibujarGeometrias()};if(n!=='espacio')extra20.append(sel);const op=el('input');op.type='range';op.min=0;op.max=100;op.value=opacidad20*100;op.setAttribute('aria-label','Transparencia');op.oninput=()=>{opacidad20=op.value/100;dibujarGeometrias()};extra20.append(el('span',null,'Opacidad'),op);function boton(t,f){const b=el('button',null,t);b.onclick=f;extra20.append(b)}boton('CSV',exportar20);boton('Compartir',async()=>{const u=new URL(location.href);u.searchParams.set('consulta',JSON.stringify(consulta20()));try{if(navigator.share)await navigator.share({url:u.href});else if(navigator.clipboard)await navigator.clipboard.writeText(u.href);else prompt('Copia el enlace',u.href)}catch(e){}});boton('☆ Guardar',()=>{const q=consulta20();q.nombre=DATOS[actual]?.nombre||espacioActual?.espacio||provincia20||(punto?punto.slice().reverse().join(', '):'Explorar Andalucía');const a=favoritos20();a.push(q);localStorage.setItem('renpa_favoritos20',JSON.stringify(a));pintarFav20()});if(n==='provincia'){const p=el('select');[...new Set(lista.map(x=>x.provincia))].sort().forEach(v=>p.append(new Option(v,v)));p.value=provincia20||p.options[0].value;provincia20=p.value;p.onchange=()=>{provincia20=p.value;territorio20()};extra20.append(p);territorio20()}if(n==='explorar')territorio20()}
+ document.getElementById('gps20').onclick=()=>{if(!navigator.geolocation){error.textContent='GPS no disponible';return}error.textContent='Buscando ubicación…';navigator.geolocation.getCurrentPosition(p=>{if(modo==='punto'){document.getElementById('qPunto').value=p.coords.latitude+', '+p.coords.longitude;consultarPunto(p.coords.longitude,p.coords.latitude)}},e=>error.textContent='No se pudo obtener la ubicación: '+e.message,{enableHighAccuracy:true,timeout:15000})};pintarFav20();
+
  document.querySelectorAll('#homeChoices button').forEach(b=>{b.disabled=false;b.onclick=()=>cambiarModo(b.dataset.mode)});
  document.getElementById('homeLoading').hidden=true;
+ try{const q=new URLSearchParams(location.search);if(q.has('consulta'))abrir20(JSON.parse(q.get('consulta')))}catch(e){};
  document.getElementById('homeBack').onclick=()=>{document.activeElement.blur();document.getElementById('visor').hidden=true;document.getElementById('inicio').hidden=false;document.getElementById('homeBack').hidden=true;};
 })();

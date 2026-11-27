@@ -1,10 +1,10 @@
 (()=>{
 const key='renpa-web-tutorial-v18', steps=[
-['#homeChoices','Tres formas de explorar','Elige una modalidad de consulta desde la pantalla de inicio.'],
+['#homeChoices','Cinco formas de explorar','Elige una modalidad de consulta desde la pantalla de inicio.'],
 ['#homeMunicipio','Consulta por municipio','Escribe el nombre del municipio. Verás los espacios naturales protegidos que hay en él, las hectáreas que ocupan, el porcentaje del municipio que ocupa cada espacio y el porcentaje del espacio situado dentro del municipio.'],
 ['#homeEspacio','Consulta por espacio natural','También puedes consultar todos los municipios que forman parte de un espacio natural protegido. Escribe su nombre y verás su perímetro completo en el mapa.'],
 ['#homePunto','Consulta por punto','Introduce las coordenadas (latitud, longitud) o selecciona un punto en el mapa. Consulta orientativa sobre geometría simplificada.'],
-['#homeGuide','Resultados','En el visor, encontrarás los resultados junto al mapa. Puedes regresar a esta pantalla pulsando Inicio.'],
+['#homeProvincia','Provincia','Consulta superficies y porcentajes provinciales.'],['#homeExplorar','Explorar Andalucía','Navega por el mapa y utiliza los filtros.'],['#homeGuide','Resultados','En el visor, encontrarás los resultados junto al mapa. Puedes regresar a esta pantalla pulsando Inicio.'],
 ['#tutorialHelp','¡Todo listo!','Puedes volver a consultar esta guía pulsando Ayuda.']];
 const overlay=document.createElement('div');overlay.id='tutorialOverlay';overlay.hidden=true;overlay.innerHTML='<div id="tutorialSpot"></div><section id="tutorialCard" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle"><div id="tutorialCount"></div><h2 id="tutorialTitle"></h2><p id="tutorialText"></p><div class="tutorialActions"><button id="tutorialSkip">Saltar tutorial</button><button id="tutorialPrev">Anterior</button><button id="tutorialNext">Siguiente</button></div></section>';document.body.append(overlay);
 const $=id=>document.getElementById(id),card=$('tutorialCard'),spot=$('tutorialSpot'),help=$('tutorialHelp');let i=0,active=false,oldFocus=null,blocked=[];
