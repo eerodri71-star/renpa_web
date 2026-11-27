@@ -3,8 +3,9 @@
  const fallback=window.RENPA_CORRECCIONES_INICIALES;
  function valido(v){return v&&v.version===1&&Array.isArray(v.exclusiones)&&Array.isArray(v.confirmaciones)&&v.exclusiones.every(x=>typeof x==='string')&&v.confirmaciones.every(x=>typeof x==='string')}
  function aplicar(v){
-   window.INCIDENCIAS_RENPA=v.exclusiones.map(clave=>({clave,accion:'EXCLUIR'}));
-   window.SOLAPES_CONFIRMADOS_RENPA=v.confirmaciones.map(clave=>({clave,accion:'CONFIRMAR'}));
+   const ex=v.exclusiones.map(clave=>({clave,accion:'EXCLUIR'}));const co=v.confirmaciones.map(clave=>({clave,accion:'CONFIRMAR'}));
+   if(Array.isArray(window.INCIDENCIAS_RENPA))window.INCIDENCIAS_RENPA.splice(0,window.INCIDENCIAS_RENPA.length,...ex);else window.INCIDENCIAS_RENPA=ex;
+   if(Array.isArray(window.SOLAPES_CONFIRMADOS_RENPA))window.SOLAPES_CONFIRMADOS_RENPA.splice(0,window.SOLAPES_CONFIRMADOS_RENPA.length,...co);else window.SOLAPES_CONFIRMADOS_RENPA=co;
  }
  window.RENPA_CARGAR_CORRECCIONES=async function(){
    let data=null,origen='incluidas en la aplicación';
