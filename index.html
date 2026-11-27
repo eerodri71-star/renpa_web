@@ -4,30 +4,54 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#2f6b3a">
+
+<link rel="apple-touch-icon" href="icon-180.png">
+
+
 <meta name="description" content="Consulta los espacios naturales protegidos y su relación territorial con los municipios de Andalucía.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="RENPA · Consulta territorial">
+<meta property="og:description" content="Consulta los espacios naturales protegidos de Andalucía por municipio o espacio natural.">
+<meta property="og:url" content="https://eerodri71-star.github.io/renpa_web/">
+<meta property="og:image" content="https://eerodri71-star.github.io/renpa_web/icon-512.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="RENPA · Consulta territorial">
+<meta name="twitter:description" content="Consulta los espacios naturales protegidos de Andalucía.">
+<meta name="twitter:image" content="https://eerodri71-star.github.io/renpa_web/icon-512.png">
 <title>RENPA · Consulta territorial</title>
-<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/styles.css?v=18">
+
 </head>
 <body>
 
 <header><img src="assets/cabecera.png" alt="Cabecera"></header>
-<nav class="topbar"><div class="topbar-inner"><span class="brand"><span class="brand-mark">◈</span> RENPA <small>Consulta territorial</small></span><span class="top-status"><span class="status-dot"></span> Consulta pública</span></div></nav>
-<main><div class="section-tag">ANDALUCÍA · ESPACIOS NATURALES PROTEGIDOS</div>
-<h1>Explora los espacios naturales protegidos de Andalucía</h1>
-<p class="sub">Localiza municipios y espacios naturales, explora su distribución en el mapa y consulta las superficies y porcentajes de ocupación.</p>
-<div class="info-strip"><div><strong>Consulta territorial</strong><span>Municipios y espacios protegidos</span></div><div><strong>Información geográfica</strong><span>Superficies, porcentajes y cartografía</span></div><div><strong>Datos revisados</strong><span>Exclusiones y solapes confirmados aplicados</span></div></div>
-<div class="modos"><button type="button" class="modoBtn activo" id="tabMunicipio">Buscar por municipio</button><button type="button" class="modoBtn" id="tabEspacio">Buscar por espacio natural</button></div>
+<nav class="topbar"><div class="topbar-inner"><span class="brand"><span class="brand-mark">◈</span> RENPA <small>Consulta territorial</small></span><span class="top-status"><span class="status-dot"></span> Consulta pública</span><button id="homeBack" type="button" hidden>⌂ Inicio</button><button id="tutorialHelp" type="button" aria-label="Ver tutorial">? Ayuda</button></div></nav>
+<main id="inicio"><div class="section-tag">ANDALUCÍA · ESPACIOS NATURALES PROTEGIDOS</div>
+<div class="homeIntro"><img src="icon-192.png" alt="" width="64" height="64"><h1>Explora los espacios naturales protegidos de Andalucía</h1></div>
+<p>Consulta la distribución territorial de la Red de Espacios Naturales Protegidos de Andalucía (RENPA) y su relación con los municipios y ubicaciones geográficas.</p>
+<h2>¿Qué quieres consultar?</h2>
+<div id="homeChoices">
+<button id="homeMunicipio" data-mode="municipio" disabled><span class="homeIcon">⌖</span><span><strong>Consulta por municipio</strong><small>Descubre los espacios protegidos de un municipio, sus hectáreas y porcentajes de ocupación.</small></span><span>›</span></button>
+<button id="homeEspacio" data-mode="espacio" disabled><span class="homeIcon">♧</span><span><strong>Consulta por espacio natural</strong><small>Conoce su extensión territorial y los municipios que forman parte de él.</small></span><span>›</span></button>
+<button id="homePunto" data-mode="punto" disabled><span class="homeIcon">⊙</span><span><strong>Consulta por punto</strong><small>Comprueba si una ubicación se encuentra dentro de un espacio natural protegido.</small></span><span>›</span></button>
+</div><p id="homeLoading" role="status">Cargando cartografía…</p>
+<button id="homeGuide" type="button">ⓘ Cómo utilizar la aplicación</button>
+<p class="webVersion">RENPA · Visor web 1.18 · <a href="https://eerodri71-star.github.io/renpa_movil/">Versión móvil</a></p>
+
+</main><main id="visor" hidden><div class="modos"><button type="button" class="modoBtn activo" id="tabMunicipio">Municipio</button><button type="button" class="modoBtn" id="tabEspacio">Espacio natural</button><button type="button" class="modoBtn" id="tabPunto">Punto</button></div>
 <div id="busquedaMunicipio">
-<div class="buscador"><input id="q" type="text" placeholder="Escribe el nombre de un municipio…" autocomplete="off" autofocus><ul id="sugerencias"></ul></div>
-<p class="opciones"><label><input type="checkbox" id="chkRevisar" checked> Incluir solapes pequeños (a revisar)</label> &nbsp;·&nbsp; <label><input type="checkbox" id="chkRuido" checked> Mostrar solapes descartados (posible fallo de geometría)</label></p>
+<div class="buscador"><input id="q" type="text" placeholder="Escribe el nombre de un municipio…" autocomplete="off"><ul id="sugerencias"></ul></div>
+
 <!-- Herramientas de edición excluidas de la aplicación pública -->
 </div>
 <div id="busquedaEspacio"><p class="ayudaModo">Elige un espacio natural para ver su extensión cartográfica completa y los municipios en los que aparece.</p><div class="buscadorEspacio"><input id="qEspacio" type="text" placeholder="Escribe el nombre de un espacio natural…" autocomplete="off"><ul id="sugerenciasEspacio"></ul></div></div>
-<section id="mapaCont" aria-label="Cartografía territorial"><div class="mapaControles"><label for="mapaFondo">Fondo del mapa:</label><select id="mapaFondo"><option value="satellite">Satélite</option><option value="none">Sin mapa base</option></select><span>Haz clic en el nombre de un espacio para acercarte.</span></div><div id="mapa"><div id="teselas"></div><svg id="overlay" xmlns="http://www.w3.org/2000/svg" aria-label="Mapa de espacios protegidos"></svg><div id="popupMapa"></div><div id="mapaEstado">Satélite: Esri · arrastra para desplazarte · rueda para zoom</div></div><div id="capasPanel"></div><div id="leyenda"></div></section>
-<section id="resultado"></section>
-<p id="estadoSincronizacion" class="sync-status" aria-live="polite">Consultando correcciones publicadas…</p>
+<div id="busquedaPunto" hidden><form id="formPunto"><input id="qPunto" placeholder="Latitud, longitud" aria-label="Coordenadas geográficas" required><button>Consultar</button></form><small>Ejemplo: 37.2, -6.4. También puedes seleccionar un punto en el mapa. En Google Maps, mantén pulsado el lugar y copia las coordenadas del marcador si aparecen.</small><p id="errorPunto" role="status"></p></div><div class="workspace"><section id="mapaCont" aria-label="Cartografía territorial"><div class="mapaControles"><label for="mapaFondo">Fondo del mapa:</label><select id="mapaFondo"><option value="satellite">Satélite</option><option value="none">Sin mapa base</option></select><span>Haz clic en el nombre de un espacio para acercarte.</span></div><div id="mapa"><div id="teselas"></div><svg id="overlay" xmlns="http://www.w3.org/2000/svg" aria-label="Mapa de espacios protegidos"></svg><div id="popupMapa"></div><div id="mapaBotones"><button id="zoomMas" type="button" aria-label="Ampliar">+</button><button id="zoomMenos" type="button" aria-label="Reducir">−</button><button id="zoomInicio" type="button" aria-label="Volver al encuadre inicial">⌖</button></div><div id="mapaEstado">Satélite: Esri</div></div><div id="capasPanel"></div><div id="leyenda"></div></section>
+<section id="ficha"><button id="abrirFicha" aria-expanded="false">Resultados ⌃</button><div id="contenidoFicha"><section id="resultado"></section></div></section></div>
+
 </main>
-<footer>% del municipio: parte de la superficie municipal ocupada por el espacio. % del espacio: parte del espacio protegido que cae dentro del municipio. ⚠ = solape muy pequeño según el porcentaje de superficie municipal ocupada (no según el porcentaje del espacio protegido). Haz clic en un espacio de la lista para verlo en el mapa. En la búsqueda inversa puedes pulsar un municipio para abrir su ficha. Un municipio puede pertenecer a varias figuras a la vez, por lo que los porcentajes no se suman.</footer>
+<footer>% del municipio: parte de la superficie municipal ocupada por el espacio. % del espacio: parte del espacio protegido que cae dentro del municipio. Haz clic en un espacio de la lista para verlo en el mapa. En la búsqueda inversa puedes pulsar un municipio para abrir su ficha. Un municipio puede pertenecer a varias figuras a la vez, por lo que los porcentajes no se suman.</footer>
 
 
 
@@ -39,8 +63,11 @@
 <script src="cargar-correcciones.js"></script>
 <script>
 window.RENPA_CARGAR_CORRECCIONES().catch(console.error).finally(function(){
- const s=document.createElement('script');s.src='js/public.js';document.body.appendChild(s);
+ const s=document.createElement('script');s.src='js/public.js?v=18';document.body.appendChild(s);
 });
 </script>
+
+
+<script src="js/tutorial.js?v=18"></script>
 </body>
 </html>

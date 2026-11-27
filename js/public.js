@@ -1,5 +1,5 @@
 (function(){
- const $q=document.getElementById('q'),$sug=document.getElementById('sugerencias'),$res=document.getElementById('resultado'),$chk=document.getElementById('chkRevisar'),$ruido=document.getElementById('chkRuido'),$mapaCont=document.getElementById('mapaCont'),$mapa=document.getElementById('mapa'),$tiles=document.getElementById('teselas'),$svg=document.getElementById('overlay'),$popup=document.getElementById('popupMapa'),$leyenda=document.getElementById('leyenda'),$panel=document.getElementById('capasPanel'),$fondo=document.getElementById('mapaFondo'),$estado=document.getElementById('mapaEstado');
+ const $q=document.getElementById('q'),$sug=document.getElementById('sugerencias'),$res=document.getElementById('resultado'),$mapaCont=document.getElementById('mapaCont'),$mapa=document.getElementById('mapa'),$tiles=document.getElementById('teselas'),$svg=document.getElementById('overlay'),$popup=document.getElementById('popupMapa'),$leyenda=document.getElementById('leyenda'),$panel=document.getElementById('capasPanel'),$fondo=document.getElementById('mapaFondo'),$estado=document.getElementById('mapaEstado');
  const $tabMunicipio=document.getElementById('tabMunicipio'),$tabEspacio=document.getElementById('tabEspacio'),$busquedaMunicipio=document.getElementById('busquedaMunicipio'),$busquedaEspacio=document.getElementById('busquedaEspacio'),$qEspacio=document.getElementById('qEspacio'),$sugEspacio=document.getElementById('sugerenciasEspacio');
 
  if(typeof DATOS==='undefined'){
@@ -34,10 +34,12 @@
    catalogoEspacios.get(key).registros.push({cod,e});
  }));
 
+ Object.keys(window.RENPA_ESPACIOS_COMPLETOS||{}).forEach(key=>{if(!catalogoEspacios.has(key)){const [figura,espacio,tipo]=key.split('||');catalogoEspacios.set(key,{key,figura,espacio,tipo,registros:[]});}});
  const listaEspacios=[...catalogoEspacios.values()].sort((a,b)=>a.espacio.localeCompare(b.espacio,'es')||a.figura.localeCompare(b.figura,'es'));
  const lista=Object.entries(DATOS).map(([cod,m])=>({cod,nombre:m.nombre,provincia:m.provincia,n:norm(m.nombre),ruido:m.espacios.some(e=>e.clasificacion==='RUIDO')})).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
  const COLORES={'Espacios Naturales Protegidos':'#2f6b3a','Red Natura 2000':'#1f6fb2','Reserva de la Biosfera':'#d98a00','ZEPIM':'#8e3fb0'},colorDe=f=>COLORES[f]||'#555555';
 
+ let encuadre=null, punto=null, consultaId=0;
  let actual=null,idxActivo=-1,visibles=[],entradas=[],capaMun=null,zoom=7,centro={x:0,y:0},arrastre=null,ancho=0,alto=0,fondo='satellite';
  let modo='municipio',idxEspacio=-1,visiblesEspacio=[],espacioActual=null,limitesExtra=[],municipiosEspacio=[];
  // Lectura de los registros publicados. La edición no existe en la versión pública.
@@ -48,6 +50,7 @@
  function ultimaAccionConfirmacion(clave){for(let i=confirmaciones.length-1;i>=0;i--){if(confirmaciones[i].clave===clave)return confirmaciones[i].accion}return 'SIN_CONFIRMAR'}
  function estaExcluida(cod,e){return ultimaAccion(claveRelacion(cod,e))==='EXCLUIR'}
  function estaConfirmado(cod,e){return ultimaAccionConfirmacion(claveRelacion(cod,e))==='CONFIRMAR'}
+ function visiblePublico(cod,e){return !estaExcluida(cod,e)&&(estaConfirmado(cod,e)||(e.clasificacion||e.clasif)==='CLARO')}
  function esRuido(cod,e){return (e.clasificacion==='RUIDO'||e.clasif==='RUIDO')&&!estaConfirmado(cod,e)}
 
  const el=(tag,cls,txt)=>{
@@ -59,7 +62,9 @@
  const fmt=(n,d=2)=>Number(n).toLocaleString('es-ES',{minimumFractionDigits:d,maximumFractionDigits:d});
 
  function cambiarModo(nuevo){
-   modo=nuevo;
+   document.getElementById('inicio').hidden=true;document.getElementById('visor').hidden=false;document.getElementById('homeBack').hidden=false;
+
+   modo=nuevo; punto=null; consultaId++; document.getElementById('busquedaPunto').hidden=nuevo!=='punto'; document.getElementById('tabPunto').classList.toggle('activo',nuevo==='punto');
    actual=null;
    espacioActual=null;
    entradas=[];
@@ -67,15 +72,15 @@
    limitesExtra=[];
    municipiosEspacio=[];
    $res.innerHTML='';
-   $mapaCont.style.display='none';
+   $mapaCont.style.display='block';
    $popup.style.display='none';
    const esMun=nuevo==='municipio';
    $busquedaMunicipio.style.display=esMun?'block':'none';
-   $busquedaEspacio.style.display=esMun?'none':'block';
+   $busquedaEspacio.style.display=nuevo==='espacio'?'block':'none';
    $tabMunicipio.classList.toggle('activo',esMun);
-   $tabEspacio.classList.toggle('activo',!esMun);
-   if(esMun)$q.focus();
-   else{$qEspacio.focus();sugerirEspacios()}
+   $tabEspacio.classList.toggle('activo',nuevo==='espacio');
+
+ vistaInicial();
  }
 
  function sugerirEspacios(){
@@ -111,7 +116,7 @@
    codigos.forEach(cod=>{
      const m=DATOS[cod];
      if(!m)return;
-     const relaciones=registros.filter(r=>r.cod===cod).map(r=>r.e).filter(e=>!estaExcluida(cod,e)&&((e.clasif!=='REVISAR'||$chk.checked||estaConfirmado(cod,e))&&(!esRuido(cod,e)||$ruido.checked)));
+     const relaciones=registros.filter(r=>r.cod===cod).map(r=>r.e).filter(e=>visiblePublico(cod,e));
      if(relaciones.length)muniValidos.set(cod,{cod,nombre:m.nombre,provincia:m.provincia,relaciones});
    });
 
@@ -130,7 +135,7 @@
    $res.appendChild(cab);
    $res.appendChild(el('p','resumen',municipiosEspacio.length+' municipios con relación registrada en los datos cartográficos.'));
 
-   if(!municipiosEspacio.length)$res.appendChild(el('div','aviso','No hay municipios con relaciones activas para este espacio según los filtros actuales.'));
+   if(!municipiosEspacio.length)$res.appendChild(el('div','aviso','No hay municipios con relaciones activas para este espacio.'));
 
    const titulo=el('h3',null,'Municipios incluidos');
    titulo.style.margin='18px 0 8px';
@@ -243,20 +248,21 @@
    if(!ancho||!alto)return;
    $tiles.innerHTML='';
    if(fondo!=='none'){
-     const n=Math.pow(2,zoom),left=centro.x-ancho/2,top=centro.y-alto/2,x0=Math.floor(left/256),x1=Math.floor((left+ancho)/256),y0=Math.floor(top/256),y1=Math.floor((top+alto)/256);
+     const z=Math.floor(zoom),size=256*Math.pow(2,zoom-z),n=Math.pow(2,z),left=centro.x-ancho/2,top=centro.y-alto/2,x0=Math.floor(left/size),x1=Math.floor((left+ancho)/size),y0=Math.floor(top/size),y1=Math.floor((top+alto)/size);
      for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++){
        if(y<0||y>=n)continue;
        const im=document.createElement('img');
        im.alt='';
        im.draggable=false;
-       im.src=tileUrl(zoom,x,y);
-       im.style.left=(x*256-left)+'px';
-       im.style.top=(y*256-top)+'px';
+       im.src=tileUrl(z,x,y);
+       im.style.width=im.style.height=size+'px';
+       im.style.left=(x*size-left)+'px';
+       im.style.top=(y*size-top)+'px';
        im.onerror=()=>{im.style.display='none'};
        $tiles.appendChild(im);
      }
    }
-   $estado.textContent=(fondo==='satellite'?'Satélite: Esri':fondo==='normal'?'Mapa normal: OpenStreetMap':'Sin mapa base')+' · arrastra para desplazarte · rueda para zoom';
+   $estado.textContent=(fondo==='satellite'?'Satélite: Esri':fondo==='normal'?'Mapa normal: OpenStreetMap':'Sin mapa base');
    $svg.setAttribute('viewBox',`0 0 ${ancho} ${alto}`);
  }
 
@@ -278,13 +284,6 @@
    t.appendChild(document.createTextNode(e.figura+(e.tipo?' ('+e.tipo+')':'')));
    t.appendChild(el('br'));
    t.appendChild(document.createTextNode(fmt(e.pct_municipio)+' % del municipio · '+fmt(e.solape_ha)+' ha'));
-   if(esRuido(actual,e)){
-     t.appendChild(el('br'));
-     t.appendChild(el('span','ruidoTxt','⚠ posible fallo de geometría'));
-   }else if(estaConfirmado(actual,e)){
-     t.appendChild(el('br'));
-     t.appendChild(el('span','revisar','✓ solape pequeño confirmado'));
-   }
    cont.appendChild(t);
  }
 
@@ -316,6 +315,7 @@
  // Popup sencillo para el mapa de búsqueda por espacio natural.
  // Muestra únicamente el municipio, la provincia, el porcentaje municipal y las hectáreas.
  function clicMapa(ev){
+ if(modo==='punto'){const r=$mapa.getBoundingClientRect(); const p=inv({x:centro.x+ev.clientX-r.left-ancho/2,y:centro.y+ev.clientY-r.top-alto/2}); consultarPunto(p.lon??p[0],p.lat??p[1]);return;}
    const r=$mapa.getBoundingClientRect();
    const x=ev.clientX-r.left;
    const y=ev.clientY-r.top;
@@ -426,7 +426,7 @@
 
        // En la búsqueda por espacio, el clic lo gestiona el pointerup global.
        // Así se evita abrir el popup dos veces.
-       if(modo==='espacio')return;
+       if(modo!=='municipio')return;
 
        enfocar(en.key);
      });
@@ -442,6 +442,7 @@
 
      $svg.appendChild(p);
    });
+   if(punto){const pos=screen(punto[0],punto[1]),c=document.createElementNS(ns,'circle');c.setAttribute('cx',pos[0]);c.setAttribute('cy',pos[1]);c.setAttribute('r',8);c.setAttribute('fill','#d62828');c.setAttribute('stroke','white');c.setAttribute('stroke-width',3);$svg.appendChild(c);}
  }
 
  function ajustarBounds(g,maxZoom=19,pad=.10){
@@ -457,6 +458,7 @@
    zoom=Math.max(2,Math.min(maxZoom,z));
    const a=merc(b.minX,b.maxY,zoom),c=merc(b.maxX,b.minY,zoom);
    centro={x:(a.x+c.x)/2,y:(a.y+c.y)/2};
+   encuadre={zoom,centro:{...centro}};
    return true;
  }
 
@@ -515,7 +517,7 @@
 
  function dibujarMapa(){
    if(!actual||typeof GEO==='undefined'||!GEO[actual]||!GEO[actual].mun){
-     $mapaCont.style.display='none';
+     $mapaCont.style.display='block';
      return;
    }
 
@@ -529,10 +531,8 @@
 
    g.esp.forEach(e=>{
      if(!e.geom)return;
-     if(estaExcluida(actual,e))return;
-     const ruido=esRuido(actual,e);
-     if(ruido&&!$ruido.checked)return;
-     if(e.clasif==='REVISAR'&&!$chk.checked&&!estaConfirmado(actual,e))return;
+     if(!visiblePublico(actual,e))return;
+     const ruido=false;
      const col=ruido?'#d62828':colorDe(e.figura);
      entradas.push({e,activa:true,ruido,color:col,key:e.figura+'||'+e.espacio+'||'+(e.tipo||'')});
      if(ruido)hayRuido=true;
@@ -575,7 +575,7 @@
    }
    ajustarBounds(en.e.geom,19,.12);
    dibujarGeometrias();
-   $mapaCont.scrollIntoView({behavior:'smooth',block:'center'});
+   
    const c=el('div');
    lineasPopup(en.e,c);
    popupAt(ancho/2,alto/2,c);
@@ -590,7 +590,7 @@
    visibles.forEach((m,i)=>{
      const li=el('li');
      li.appendChild(el('span',null,m.nombre));
-     li.appendChild(el('small',null,(DATOS[m.cod].espacios.some(e=>esRuido(m.cod,e)&&!estaExcluida(m.cod,e))?'⚠ ':'')+m.provincia));
+     li.appendChild(el('small',null,m.provincia));
      li.addEventListener('mousedown',e=>{e.preventDefault();elegir(m)});
      $sug.appendChild(li);
    });
@@ -610,17 +610,14 @@
    if(!actual)return;
 
    const m=DATOS[actual],
-   todosRuido=m.espacios.filter(e=>esRuido(actual,e)&&!estaExcluida(actual,e)),
-   espacios=m.espacios.filter(e=>!estaExcluida(actual,e)&&((e.clasificacion==='CLARO')||(e.clasificacion==='REVISAR'&&$chk.checked)||(esRuido(actual,e)&&$ruido.checked)||(estaConfirmado(actual,e)))),
-   nReales=espacios.filter(e=>!esRuido(actual,e)).length,
-   nRuido=espacios.length-nReales;
+   espacios=m.espacios.filter(e=>visiblePublico(actual,e)),
+   nReales=espacios.length;
 
    const cab=el('div','municipio');
    cab.appendChild(el('h2',null,m.nombre));
    if(m.provincia)cab.appendChild(el('span',null,m.provincia));
    $res.appendChild(cab);
 
-   if(todosRuido.length)$res.appendChild(el('div','aviso','⚠ Aviso: este municipio tiene '+todosRuido.length+(todosRuido.length===1?' solape mínimo':' solapes mínimos')+' con espacios protegidos que podrían ser un fallo de geometría (líneas que se solapan ligeramente), no una afección real. Conviene revisarlo.'));
 
    if(!espacios.length){
      $res.appendChild(el('div','vacio','Este municipio no tiene espacios protegidos de la RENPA registrados.'));
@@ -628,7 +625,6 @@
    }
 
    let txt=nReales+(nReales===1?' espacio protegido':' espacios protegidos');
-   if(nRuido)txt+=' · '+nRuido+(nRuido===1?' posible fallo de geometría':' posibles fallos de geometría');
    $res.appendChild(el('p','resumen',txt));
 
    const grupos={};
@@ -657,14 +653,6 @@
        card.appendChild(barra);
 
        const det=el('div','detalle',fmt(e.solape_ha)+' ha dentro del municipio · '+fmt(e.pct_espacio)+' % del espacio');
-       if(e.clasificacion==='REVISAR'){
-  	 if(confirmado)det.appendChild(el('span','revisar',' · ✓ solape pequeño confirmado'));
-  	 else det.appendChild(el('span','revisar',' · solape pequeño, a revisar'));
-	}
-       if(e.clasificacion==='RUIDO'){
- 	 if(confirmado)det.appendChild(el('span','revisar',' · ✓ solape pequeño confirmado'));
-  	 else det.appendChild(el('span','ruidoTxt',' · ⚠ posible fallo de geometría (solape mínimo)'));
-	}
        card.appendChild(det);
 
        g.appendChild(card);
@@ -679,54 +667,24 @@
    dibujarGeometrias();
  });
 
- $mapa.addEventListener('pointerdown',e=>{
-   if(e.button!==0)return;
-   e.preventDefault();
-   arrastre={id:e.pointerId,x:e.clientX,y:e.clientY,cx:centro.x,cy:centro.y,lastX:e.clientX,lastY:e.clientY,moved:false};
-   $mapa.classList.add('arrastrando');
- });
-
- window.addEventListener('pointermove',e=>{
-   if(!arrastre||e.pointerId!==arrastre.id)return;
-   const dx=e.clientX-arrastre.x,dy=e.clientY-arrastre.y;
-   if(Math.abs(dx)+Math.abs(dy)>3)arrastre.moved=true;
-   if(arrastre.moved){
-     e.preventDefault();
-     centro.x=arrastre.cx-dx;
-     centro.y=arrastre.cy-dy;
-     dibujarGeometrias();
-   }
-   arrastre.lastX=e.clientX;
-   arrastre.lastY=e.clientY;
- },{passive:false});
-
- window.addEventListener('pointerup',e=>{
-   if(!arrastre||e.pointerId!==arrastre.id)return;
-   const a=arrastre;
-   arrastre=null;
-   $mapa.classList.remove('arrastrando');
-   if(!a.moved)clicMapa(e);
- });
-
- window.addEventListener('pointercancel',()=>{
-   arrastre=null;
-   $mapa.classList.remove('arrastrando');
- });
-
- $mapa.addEventListener('wheel',e=>{
-   e.preventDefault();
-   const r=$mapa.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top,world={x:centro.x+px-ancho/2,y:centro.y+py-alto/2},old=zoom;
-   zoom=Math.max(2,Math.min(19,zoom+(e.deltaY<0?1:-1)));
-   if(old!==zoom){
-     const ratio=Math.pow(2,zoom-old);
-     centro.x=world.x*ratio-(px-ancho/2);
-     centro.y=world.y*ratio-(py-alto/2);
-     dibujarGeometrias();
-   }
- },{passive:false});
+ let gesto=null, ultimoToque=null, frame=0;
+ const dedos=new Map();
+ function pintar(){if(!frame)frame=requestAnimationFrame(()=>{frame=0;dibujarGeometrias()});}
+ function local(e){const r=$mapa.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top};}
+ function medidas(){const a=[...dedos.values()];return a.length===1?{x:a[0].x,y:a[0].y,d:1}:{x:(a[0].x+a[1].x)/2,y:(a[0].y+a[1].y)/2,d:Math.max(1,Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y))};}
+ function iniciar(moved=false){const m=medidas();gesto={...m,z:zoom,cx:centro.x,cy:centro.y,moved,multi:dedos.size>1};}
+ function acercar(z,x=ancho/2,y=alto/2){const next=Math.max(2,Math.min(19,z)),ratio=Math.pow(2,next-zoom);centro.x=(centro.x+x-ancho/2)*ratio-x+ancho/2;centro.y=(centro.y+y-alto/2)*ratio-y+alto/2;zoom=next;cerrarPopup();pintar();}
+ $mapa.addEventListener('pointerdown',e=>{if(e.button!==0||e.target.closest('#mapaBotones,#popupMapa'))return;e.preventDefault();dedos.set(e.pointerId,local(e));$mapa.setPointerCapture(e.pointerId);iniciar(dedos.size>1||!!gesto?.moved);if(dedos.size>1){ultimoToque=null;cerrarPopup();}});
+ $mapa.addEventListener('pointermove',e=>{if(!dedos.has(e.pointerId))return;dedos.set(e.pointerId,local(e));const m=medidas(),g=gesto;if(!g)return;if(Math.hypot(m.x-g.x,m.y-g.y)>4||g.multi)g.moved=true;if(!g.moved)return;const z=Math.max(2,Math.min(19,g.z+(g.multi?Math.log2(m.d/g.d):0))),r=Math.pow(2,z-g.z);zoom=z;centro.x=(g.cx+g.x-ancho/2)*r-m.x+ancho/2;centro.y=(g.cy+g.y-alto/2)*r-m.y+alto/2;cerrarPopup();pintar();});
+ function terminar(e,cancel=false){if(!dedos.has(e.pointerId))return;const tap=!cancel&&dedos.size===1&&!gesto.moved&&!gesto.multi;dedos.delete(e.pointerId);if(dedos.size){iniciar(true);return;}gesto=null;if(tap){const p=local(e),t=performance.now();if(ultimoToque&&t-ultimoToque.t<320&&Math.hypot(p.x-ultimoToque.x,p.y-ultimoToque.y)<30){ultimoToque=null;acercar(zoom+1,p.x,p.y);}else{ultimoToque={...p,t};clicMapa(e);}}else ultimoToque=null;}
+ $mapa.addEventListener('pointerup',e=>terminar(e));$mapa.addEventListener('pointercancel',e=>terminar(e,true));$mapa.addEventListener('lostpointercapture',e=>terminar(e,true));
+ $mapa.addEventListener('wheel',e=>{e.preventDefault();const p=local(e);acercar(zoom+(e.deltaY<0?1:-1),p.x,p.y);},{passive:false});
+ document.getElementById('zoomMas').onclick=()=>acercar(zoom+1);
+ document.getElementById('zoomMenos').onclick=()=>acercar(zoom-1);
+ document.getElementById('zoomInicio').onclick=()=>{if(encuadre){zoom=encuadre.zoom;centro={...encuadre.centro};cerrarPopup();pintar();}};
 
  window.addEventListener('resize',()=>{
-   if(actual||espacioActual)dibujarGeometrias();
+   ancho=$mapa.clientWidth;alto=$mapa.clientHeight;dibujarGeometrias();
  });
 
  $tabMunicipio.addEventListener('click',()=>cambiarModo('municipio'));
@@ -735,7 +693,7 @@
  $qEspacio.addEventListener('input',()=>{
    espacioActual=null;
    $res.innerHTML='';
-   $mapaCont.style.display='none';
+   $mapaCont.style.display='block';
    sugerirEspacios();
  });
  $qEspacio.addEventListener('focus',sugerirEspacios);
@@ -756,7 +714,7 @@
  $q.addEventListener('input',()=>{
    actual=null;
    $res.innerHTML='';
-   $mapaCont.style.display='none';
+   $mapaCont.style.display='block';
    sugerir();
  });
  $q.addEventListener('focus',sugerir);
@@ -774,14 +732,18 @@
    [...items].forEach((li,i)=>li.classList.toggle('activo',i===idxActivo));
  });
 
- $chk.addEventListener('change',()=>{
-   if(modo==='municipio'&&actual)mostrar();
-   else if(modo==='espacio'&&espacioActual)mostrarEspacio();
- });
 
- $ruido.addEventListener('change',()=>{
-   if(modo==='municipio'&&actual)mostrar();
-   else if(modo==='espacio'&&espacioActual)mostrarEspacio();
- });
-
+ function vistaInicial(){ $mapaCont.style.display='block'; $panel.innerHTML='';$leyenda.innerHTML=''; requestAnimationFrame(()=>{if(actual||espacioActual||punto)return;ancho=$mapa.clientWidth;alto=$mapa.clientHeight;zoom=7;centro=merc(-4.6,37.5);encuadre={zoom,centro:{...centro}};dibujarGeometrias();}); }
+ const ficha=document.getElementById('ficha'), abrir=document.getElementById('abrirFicha'), contenido=document.getElementById('contenidoFicha');
+ contenido.append($panel,$leyenda); function desplegar(on){ficha.classList.toggle('abierta',on);abrir.setAttribute('aria-expanded',String(on));abrir.textContent=matchMedia('(min-width:721px)').matches?'Resultados':(on?'Resultados ⌄':'Resultados ⌃');} abrir.onclick=()=>desplegar(!ficha.classList.contains('abierta'));
+ new MutationObserver(()=>{if($res.children.length)desplegar(true);else desplegar(false);}).observe($res,{childList:true});
+ document.getElementById('tabPunto').onclick=()=>cambiarModo('punto');
+ function parsePunto(t){t=t.trim();let m; m=t.match(/^\s*(-?\d+(?:\.\d+)?)\s*[,; ]\s*(-?\d+(?:\.\d+)?)\s*$/)||t.match(/^\s*(-?\d+,\d+)\s*;\s*(-?\d+,\d+)\s*$/);if(!m)throw Error('Introduce latitud, longitud en grados decimales.');let lat=Number(m[1].replace(',','.')),lon=Number(m[2].replace(',','.'));if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)throw Error('Coordenadas fuera de rango.');return [lon,lat];}
+ const error=document.getElementById('errorPunto');
+ document.getElementById('formPunto').onsubmit=e=>{e.preventDefault();try{consultarPunto(...parsePunto(document.getElementById('qPunto').value));}catch(e){error.textContent=e.message;}};
+ async function consultarPunto(lon,lat){if(!Number.isFinite(lon)||!Number.isFinite(lat))return;const id=++consultaId;error.textContent='Consultando cartografía…';try{const datosPunto=window.RENPA_ESPACIOS_COMPLETOS;if(!datosPunto||!Object.keys(datosPunto).length)throw Error('Cartografía no disponible');if(id!==consultaId||modo!=='punto')return;punto=[lon,lat];entradas=[];capaMun=null;limitesExtra=[];$panel.innerHTML='';$leyenda.innerHTML='';$res.innerHTML='';const hits=Object.entries(datosPunto).filter(([k,g])=>contiene(g,punto));$res.append(el('h2',null,hits.length?hits.length+' figuras de protección':'Sin coincidencias en las capas consultadas'),el('p',null,lat.toFixed(6)+', '+lon.toFixed(6)));for(const [key,g] of hits){const x=catalogoEspacios.get(key);const card=el('div','espacio');card.append(el('strong',null,x.espacio),el('p',null,x.figura+' · '+x.tipo));const b=el('button',null,'Ver espacio completo');b.onclick=()=>{cambiarModo('espacio');elegirEspacio(x);};card.append(b);$res.append(card);entradas.push({e:{geom:window.RENPA_ESPACIOS_COMPLETOS[key],espacio:x.espacio,figura:x.figura,tipo:x.tipo},activa:true,color:colorDe(x.figura),key});}$res.append(el('p','detalle','Consulta orientativa sobre geometría simplificada.'));error.textContent='';document.activeElement.blur();ancho=$mapa.clientWidth;alto=$mapa.clientHeight;zoom=13;centro=merc(lon,lat);encuadre={zoom,centro:{...centro}};dibujarGeometrias();}catch(e){if(id===consultaId)error.textContent='No se pudo realizar la consulta. Comprueba que la cartografía completa está disponible.';}}
+ if(typeof ResizeObserver!=='undefined')new ResizeObserver(()=>{if(ancho&&alto)dibujarGeometrias();}).observe($mapa);
+ document.querySelectorAll('#homeChoices button').forEach(b=>{b.disabled=false;b.onclick=()=>cambiarModo(b.dataset.mode)});
+ document.getElementById('homeLoading').hidden=true;
+ document.getElementById('homeBack').onclick=()=>{document.activeElement.blur();document.getElementById('visor').hidden=true;document.getElementById('inicio').hidden=false;document.getElementById('homeBack').hidden=true;};
 })();
